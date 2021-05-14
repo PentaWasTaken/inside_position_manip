@@ -1,7 +1,9 @@
-use std::ffi::CString;
+use std::ffi::{CString, c_void};
+use std::mem::size_of;
 
-use winapi::shared::windef::{HWND, RECT};
+use winapi::shared::windef::{HWND, RECT, LPRECT};
 use winapi::um::winuser::{FindWindowA, GetWindowRect};
+use winapi::um::dwmapi::{DwmGetWindowAttribute, DWMWA_EXTENDED_FRAME_BOUNDS};
 
 pub struct APIHandle {
     process_handle: HWND,
@@ -30,7 +32,9 @@ impl APIHandle {
             right: 0,
             bottom: 0,
         };
-        unsafe { GetWindowRect(self.process_handle, lprect) };
+        unsafe {
+            DwmGetWindowAttribute(self.process_handle, DWMWA_EXTENDED_FRAME_BOUNDS, lprect as LPRECT as *mut c_void, size_of::<RECT>() as u32);
+        }
         *lprect
     }
 }
