@@ -1,11 +1,7 @@
-use std::ffi::{c_void, CString};
+use std::ffi::CString;
 
-use winapi::shared::minwindef::DWORD;
 use winapi::shared::windef::{HWND, RECT};
-use winapi::um::{
-    self, handleapi::GetHandleInformation, processthreadsapi::GetProcessId, winnt::HANDLE,
-    winuser::{FindWindowA, GetWindowThreadProcessId},
-};
+use winapi::um::winuser::{FindWindowA, GetWindowRect};
 
 pub struct APIHandle {
     process_handle: HWND,
@@ -14,11 +10,11 @@ pub struct APIHandle {
 impl APIHandle {
     pub fn new() -> Result<Self, ()> {
         unsafe {
-            let process_handle = um::winuser::FindWindowA(
+            let process_handle = FindWindowA(
                 std::ptr::null(),
                 CString::new("INSIDE").unwrap().as_ptr() as *const i8,
             );
-            
+
             if process_handle.is_null() {
                 return Err(());
             }
@@ -34,7 +30,7 @@ impl APIHandle {
             right: 0,
             bottom: 0,
         };
-        unsafe { um::winuser::GetWindowRect(self.process_handle, lprect) };
+        unsafe { GetWindowRect(self.process_handle, lprect) };
         *lprect
     }
 }
