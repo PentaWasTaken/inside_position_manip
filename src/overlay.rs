@@ -50,7 +50,7 @@ impl Overlay {
     }
 
     //Runs the main loop for the overlay
-    pub fn run(self, process_handle: APIHandle) {
+    pub fn run(self, api_handle: APIHandle) {
         let window = self.window;
         let mut pixels = self.pixels;
 
@@ -64,16 +64,25 @@ impl Overlay {
 
                 //Updates overlay state
                 Event::MainEventsCleared => {
+                    let win_rect = api_handle.get_win_rect();
+                    let win_size = window.inner_size();
+                    
+                    let top = win_rect.bottom - win_size.height as i32;
+                    window.set_outer_position(PhysicalPosition::new(win_rect.left, top));
+
                     window.request_redraw();
                 }
 
                 Event::RedrawRequested(_) => {
+                    //Loads the font. This might be slow as it loads it on every redraw. Fix later?
                     let font = Font::try_from_bytes(FONT_DATA).unwrap();
 
+                    //Draws the text to the canvas. Placeholder!
                     let win_size = window.inner_size();
                     let mut canvas = RgbaImage::new(win_size.width, win_size.height);
-                    draw_text_mut(&mut canvas, [255, 255, 255, 255].into(), 0, 0, Scale::uniform(40.0), &font, "Test");
+                    draw_text_mut(&mut canvas, [255, 255, 255, 255].into(), 0, 0, Scale::uniform(40.0), &font, "suck my balls");
 
+                    //Copies the canvas to the window buffer
                     let frame = pixels.get_frame();
                     frame.copy_from_slice(canvas.as_raw());
 
