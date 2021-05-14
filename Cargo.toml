@@ -10,4 +10,4 @@ edition = "2018"
 winit = "0.24"
 winapi = {version = "0.3", features = ["winuser"]}
 pixels = "0.3"
-image = "0.23"
+imageproc = "0.22"
