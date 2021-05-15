@@ -1,27 +1,47 @@
-use std::ffi::{CString, c_void};
-use std::mem::size_of;
+use std::ffi::{c_void, CString};
+use std::mem::{size_of, size_of_val};
 
-use winapi::shared::windef::{HWND, RECT, LPRECT};
-use winapi::um::winuser::{FindWindowA, GetWindowRect};
+use winapi::shared::windef::{HWND, LPRECT, RECT};
 use winapi::um::dwmapi::{DwmGetWindowAttribute, DWMWA_EXTENDED_FRAME_BOUNDS};
+use winapi::um::memoryapi::{ReadProcessMemory, WriteProcessMemory};
+use winapi::um::processthreadsapi::OpenProcess;
+use winapi::um::psapi::EnumProcessModules;
+use winapi::um::winnt::{HANDLE, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ};
+use winapi::um::winuser::{FindWindowA, GetWindowThreadProcessId};
 
 pub struct APIHandle {
-    process_handle: HWND,
+    window_handle: HWND,
+    handle: HANDLE,
+    pub base_address: usize,
 }
 
 impl APIHandle {
     pub fn new() -> Result<Self, ()> {
         unsafe {
-            let process_handle = FindWindowA(
+            let window_handle = FindWindowA(
                 std::ptr::null(),
                 CString::new("INSIDE").unwrap().as_ptr() as *const i8,
             );
 
-            if process_handle.is_null() {
+            let pid = &mut 0u32;
+            GetWindowThreadProcessId(window_handle, pid as *mut u32);
+
+            let handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, 0, *pid);
+
+            if handle.is_null() {
                 return Err(());
             }
 
-            Ok(APIHandle { process_handle })
+            let lpcbNeeded = &mut 0u32;
+            let mut module_buffer = vec![std::ptr::null_mut(); 1024];
+
+            EnumProcessModules(handle, module_buffer.as_mut_ptr(), size_of_val(&module_buffer) as u32, lpcbNeeded as *mut _);
+
+            Ok(APIHandle {
+                window_handle,
+                handle,
+                base_address: module_buffer[0] as usize,
+            })
         }
     }
 
@@ -33,8 +53,37 @@ impl APIHandle {
             bottom: 0,
         };
         unsafe {
-            DwmGetWindowAttribute(self.process_handle, DWMWA_EXTENDED_FRAME_BOUNDS, lprect as LPRECT as *mut c_void, size_of::<RECT>() as u32);
+            DwmGetWindowAttribute(
+                self.window_handle,
+                DWMWA_EXTENDED_FRAME_BOUNDS,
+                lprect as LPRECT as *mut c_void,
+                size_of::<RECT>() as u32,
+            );
         }
         *lprect
+    }
+
+    pub fn read_memory_f32(&self, offsets: &[usize]) -> f32 {
+        let address = self.get_final_address(offsets);
+        let bytes = self.read_bytes(address, size_of::<f32>());
+        f32::from_le_bytes(bytes)
+    }
+
+    pub fn get_final_address(&self, offsets: &[usize]) -> usize {
+        let mut base = self.base_address;
+        for offset in offsets.iter().take(offsets.len() - 1) {
+            base += offset;
+            let bytes = self.read_bytes(base, size_of::<usize>());
+            base = usize::from_le_bytes(bytes);
+        }
+        base + offsets.get(offsets.len() - 1).unwrap_or(&0)
+    }
+
+    pub fn read_bytes<const N: usize>(&self, address: usize, bytes_to_read: usize) -> [u8; N] {
+        let mut buffer = [0u8; N];
+        unsafe {
+            ReadProcessMemory(self.handle, address as *const c_void, buffer.as_mut_ptr() as *mut _, bytes_to_read, std::ptr::null_mut());
+        }
+        buffer
     }
 }
