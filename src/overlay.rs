@@ -1,8 +1,7 @@
-use std::cell::RefCell;
-
+use device_query::DeviceQuery;
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
-    event::{Event, WindowEvent},
+    event::{Event, StartCause, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
@@ -15,17 +14,20 @@ use imageproc::drawing::draw_text_mut;
 use rusttype::{Font, Scale};
 
 use crate::api::APIHandle;
+use crate::input_handler::InputHandler;
+
+use std::time::{Duration, Instant};
+
+const FONT_DATA: &[u8] = include_bytes!("./Calibri.ttf");
 
 pub struct Overlay {
     event_loop: EventLoop<()>,
     window: Window,
     pixels: Pixels,
-    text: RefCell<String>,
+    text: String,
+    font: Font<'static>,
+    input_handler: InputHandler,
 }
-
-const FONT_DATA: &[u8] = include_bytes!("./Calibri.ttf");
-
-const XPOS_OFFSETS: &[usize] = &[0xF92610, 0x4c0, 0x10, 0x98, 0x670, 0x0, 0x58, 0x70, 0x10];
 
 impl Overlay {
     //Creates a new overlay with a window and event loop
@@ -40,18 +42,22 @@ impl Overlay {
             .build(&event_loop)
             .unwrap();
 
-        let mut pixels = {
+        let pixels = {
             let window_size = window.inner_size();
             let surface_texture =
                 SurfaceTexture::new(window_size.width, window_size.height, &window);
             Pixels::new(window_size.width, window_size.height, surface_texture).unwrap()
         };
 
+        let font = Font::try_from_bytes(FONT_DATA).unwrap();
+
         Overlay {
             event_loop: event_loop,
             window,
             pixels,
-            text: RefCell::new(String::new()),
+            text: String::new(),
+            font,
+            input_handler: InputHandler::new(),
         }
     }
 
@@ -59,6 +65,9 @@ impl Overlay {
     pub fn run(self, api_handle: APIHandle) {
         let window = self.window;
         let mut pixels = self.pixels;
+        let mut text = self.text;
+        let font = self.font;
+        let mut input_handler = self.input_handler;
 
         self.event_loop.run(move |event, _, control_flow| {
             match event {
@@ -75,33 +84,31 @@ impl Overlay {
                     let win_size = window.inner_size();
 
                     let top = win_rect.bottom - win_size.height as i32;
-                    window.set_outer_position(PhysicalPosition::new(win_rect.left, top));                    
+                    window.set_outer_position(PhysicalPosition::new(win_rect.left, top));
+
+                    input_handler.update(&mut text, &api_handle);
 
                     window.request_redraw();
                 }
 
                 Event::RedrawRequested(_) => {
-                    //Update overlay text
-                    let x_pos = api_handle.read_memory_f32(XPOS_OFFSETS);
-                    let mut text = String::new();
-                    text = x_pos.to_string();
-                    
-
-                    //Loads the font. This might be slow as it loads it on every redraw. Fix later?
-                    let font = Font::try_from_bytes(FONT_DATA).unwrap();
-
-                    //Draws the text to the canvas. Placeholder!
+                    //Draws the text to the canvas
                     let win_size = window.inner_size();
                     let mut canvas = RgbaImage::new(win_size.width, win_size.height);
-                    draw_text_mut(
-                        &mut canvas,
-                        [255, 255, 255, 255].into(),
-                        0,
-                        0,
-                        Scale::uniform(40.0),
-                        &font,
-                        &text
-                    );
+
+                    let lines: Vec<&str> = text.split("\n").collect();
+                    for i in 0..lines.len() {
+                        let y_pos = i * 50;
+                        draw_text_mut(
+                            &mut canvas,
+                            [255, 255, 255, 255].into(),
+                            0,
+                            y_pos as u32,
+                            Scale::uniform(40.0),
+                            &font,
+                            lines[i],
+                        );
+                    }
 
                     //Copies the canvas to the window buffer
                     let frame = pixels.get_frame();
