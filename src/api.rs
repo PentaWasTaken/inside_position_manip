@@ -9,7 +9,11 @@ use winapi::um::memoryapi::{ReadProcessMemory, WriteProcessMemory};
 use winapi::um::processthreadsapi::OpenProcess;
 use winapi::um::psapi::EnumProcessModules;
 use winapi::um::winnt::{HANDLE, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ, PROCESS_VM_WRITE};
-use winapi::um::winuser::{FindWindowA, GetForegroundWindow, GetWindowThreadProcessId};
+use winapi::um::winuser::{FindWindowA, GetForegroundWindow, SetForegroundWindow, GetWindowThreadProcessId};
+
+use winit::window::Window;
+
+use raw_window_handle::{RawWindowHandle, HasRawWindowHandle};
 
 pub struct APIHandle {
     window_handle: HWND,
@@ -63,7 +67,7 @@ impl APIHandle {
             DwmGetWindowAttribute(
                 self.window_handle,
                 DWMWA_EXTENDED_FRAME_BOUNDS,
-                lprect as LPRECT as *mut c_void,
+                lprect as LPRECT as *mut _,
                 size_of::<RECT>() as u32,
             );
         }
@@ -79,8 +83,6 @@ impl APIHandle {
     pub fn write_memory_f32(&self, offsets: &[usize], val: f32) {
         let address = self.get_final_address(offsets);
         let buffer = val.to_le_bytes();
-
-        println!("{:x}", address);
 
         unsafe {
             WriteProcessMemory(self.handle, address as *mut _, buffer.as_ptr() as *const _, buffer.len(), ptr::null_mut());
@@ -102,12 +104,23 @@ impl APIHandle {
         unsafe {
             ReadProcessMemory(
                 self.handle,
-                address as *const c_void,
+                address as *const _,
                 buffer.as_mut_ptr() as *mut _,
                 bytes_to_read,
                 ptr::null_mut(),
             );
         }
         buffer
+    }
+
+    pub fn update_focus(&self, window: &Window) {
+        let win_handle = window.raw_window_handle();
+        if let RawWindowHandle::Windows(win_handle) = win_handle {
+            unsafe {
+                if win_handle.hwnd == GetForegroundWindow() as *mut _ {
+                    SetForegroundWindow(self.window_handle as *mut _);
+                }
+            }
+        }
     }
 }
