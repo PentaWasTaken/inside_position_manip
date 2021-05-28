@@ -86,6 +86,9 @@ impl Overlay {
                     let top = win_rect.bottom - win_size.height as i32;
                     window.set_outer_position(PhysicalPosition::new(win_rect.left, top));
 
+                    //Update the focus
+                    api_handle.update_focus(&window);
+
                     input_handler.update(&mut text, &api_handle);
 
                     window.request_redraw();
@@ -96,6 +99,7 @@ impl Overlay {
                     let win_size = window.inner_size();
                     let mut canvas = RgbaImage::new(win_size.width, win_size.height);
 
+                    //Manually implements newlines
                     let lines: Vec<&str> = text.split("\n").collect();
                     for i in 0..lines.len() {
                         let y_pos = i * 50;
