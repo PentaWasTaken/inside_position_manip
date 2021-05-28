@@ -123,4 +123,8 @@ impl APIHandle {
             }
         }
     }
+
+    pub fn is_game_focused(&self) -> bool {
+        self.window_handle == unsafe{GetForegroundWindow() as *mut _}
+    }
 }
