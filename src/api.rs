@@ -1,10 +1,9 @@
-use std::ffi::{c_void, CString};
+use std::ffi::CString;
 use std::mem::{size_of, size_of_val};
 use std::ptr;
 
 use winapi::shared::windef::{HWND, LPRECT, RECT};
 use winapi::um::dwmapi::{DwmGetWindowAttribute, DWMWA_EXTENDED_FRAME_BOUNDS};
-use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::memoryapi::{ReadProcessMemory, WriteProcessMemory};
 use winapi::um::processthreadsapi::OpenProcess;
 use winapi::um::psapi::EnumProcessModules;

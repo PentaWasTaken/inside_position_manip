@@ -1,7 +1,6 @@
-use device_query::DeviceQuery;
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
-    event::{Event, StartCause, WindowEvent},
+    event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
@@ -15,8 +14,6 @@ use rusttype::{Font, Scale};
 
 use crate::api::APIHandle;
 use crate::input_handler::InputHandler;
-
-use std::time::{Duration, Instant};
 
 const FONT_DATA: &[u8] = include_bytes!("./Calibri.ttf");
 
