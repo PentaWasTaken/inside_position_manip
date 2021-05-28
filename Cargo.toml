@@ -14,6 +14,7 @@ image = "0.23"
 imageproc = "0.22"
 rusttype = "0.9"
 device_query = "0.2.8"
+raw-window-handle = "0.3.3"
 
 [profile.release]
 opt-level = "s"
