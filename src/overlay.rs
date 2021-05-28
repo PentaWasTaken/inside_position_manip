@@ -99,6 +99,10 @@ impl Overlay {
                     let win_size = window.inner_size();
                     let mut canvas = RgbaImage::new(win_size.width, win_size.height);
 
+                    if !api_handle.is_game_focused() {
+                        text.clear();
+                    }
+
                     //Manually implements newlines
                     let lines: Vec<&str> = text.split("\n").collect();
                     for i in 0..lines.len() {
