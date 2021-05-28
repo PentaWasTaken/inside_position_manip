@@ -17,4 +17,6 @@ device_query = "0.2.8"
 raw-window-handle = "0.3.3"
 
 [profile.release]
-opt-level = "s"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
