@@ -23,8 +23,20 @@ const KEYS: &[Keycode] = &[
     Keycode::Key7,
     Keycode::Key8,
     Keycode::Key9,
+    Keycode::Numpad0,
+    Keycode::Numpad1,
+    Keycode::Numpad2,
+    Keycode::Numpad3,
+    Keycode::Numpad4,
+    Keycode::Numpad5,
+    Keycode::Numpad6,
+    Keycode::Numpad7,
+    Keycode::Numpad8,
+    Keycode::Numpad9,
     Keycode::Dot,
+    Keycode::Comma,
     Keycode::Minus,
+    Keycode::NumpadSubtract,
     Keycode::Enter,
     Keycode::N,
     Keycode::Backspace,
@@ -97,31 +109,34 @@ impl InputHandler {
         text.push_str(&format!("X: {}\nY: {}\nZ: {}\n{} ({})> {}", x_pos, y_pos, z_pos, position_key, num_mode, self.input_text));
 
         let key_pressed = self.get_next_key();
-        match key_pressed {
-            Some(Keycode::Key0) => self.input_text.push('0'),
-            Some(Keycode::Key1) => self.input_text.push('1'),
-            Some(Keycode::Key2) => self.input_text.push('2'),
-            Some(Keycode::Key3) => self.input_text.push('3'),
-            Some(Keycode::Key4) => self.input_text.push('4'),
-            Some(Keycode::Key5) => self.input_text.push('5'),
-            Some(Keycode::Key6) => self.input_text.push('6'),
-            Some(Keycode::Key7) => self.input_text.push('7'),
-            Some(Keycode::Key8) => self.input_text.push('8'),
-            Some(Keycode::Key9) => self.input_text.push('9'),
-            Some(Keycode::Minus) => self.input_text.push('-'),
-            Some(Keycode::Dot) => self.input_text.push('.'),
-            Some(Keycode::X) => self.position_key = PositionKey::X,
-            Some(Keycode::Y) => self.position_key = PositionKey::Y,
-            Some(Keycode::Z) => self.position_key = PositionKey::Z,
-            Some(Keycode::N) => self.num_mode = {
+
+        if key_pressed.is_none() {return;}
+
+        match key_pressed.unwrap() {
+            Keycode::Key0 | Keycode::Numpad0 => self.input_text.push('0'),
+            Keycode::Key1 | Keycode::Numpad1 => self.input_text.push('1'),
+            Keycode::Key2 | Keycode::Numpad2 => self.input_text.push('2'),
+            Keycode::Key3 | Keycode::Numpad3 => self.input_text.push('3'),
+            Keycode::Key4 | Keycode::Numpad4 => self.input_text.push('4'),
+            Keycode::Key5 | Keycode::Numpad5 => self.input_text.push('5'),
+            Keycode::Key6 | Keycode::Numpad6 => self.input_text.push('6'),
+            Keycode::Key7 | Keycode::Numpad7 => self.input_text.push('7'),
+            Keycode::Key8 | Keycode::Numpad8 => self.input_text.push('8'),
+            Keycode::Key9 | Keycode::Numpad9 => self.input_text.push('9'),
+            Keycode::Minus | Keycode::NumpadSubtract => self.input_text.push('-'),
+            Keycode::Dot | Keycode::Comma => self.input_text.push('.'),
+            Keycode::X => self.position_key = PositionKey::X,
+            Keycode::Y => self.position_key = PositionKey::Y,
+            Keycode::Z => self.position_key = PositionKey::Z,
+            Keycode::N => self.num_mode = {
                 match self.num_mode {
                     NumMode::Increase => NumMode::Set,
                     NumMode::Set => NumMode::Increase,
                 }
             },
-            Some(Keycode::Backspace) => {self.input_text.pop(); ()},
-            Some(Keycode::C) => self.input_text.clear(),
-            Some(Keycode::Enter) => {
+            Keycode::Backspace => {self.input_text.pop(); ()},
+            Keycode::C => self.input_text.clear(),
+            Keycode::Enter => {
                 let parsed_str = self.input_text.parse::<f32>();
                 if let Ok(num) = parsed_str {
                     match self.position_key {
