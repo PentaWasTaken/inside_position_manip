@@ -49,7 +49,7 @@ impl Overlay {
         let font = Font::try_from_bytes(FONT_DATA).unwrap();
 
         Overlay {
-            event_loop: event_loop,
+            event_loop,
             window,
             pixels,
             text: String::new(),
@@ -87,8 +87,6 @@ impl Overlay {
                     api_handle.update_focus(&window);
 
                     input_handler.update(&mut text, &api_handle);
-
-                    window.request_redraw();
                 }
 
                 Event::RedrawRequested(_) => {
@@ -100,9 +98,8 @@ impl Overlay {
                         text.clear();
                     }
 
-                    //Manually implements newlines
-                    let lines: Vec<&str> = text.split("\n").collect();
-                    for i in 0..lines.len() {
+                    let lines: Vec<&str> = text.split('\n').collect();
+                    for (i, line) in lines.iter().enumerate() {
                         let y_pos = i * 50;
                         draw_text_mut(
                             &mut canvas,
@@ -111,7 +108,7 @@ impl Overlay {
                             y_pos as u32,
                             Scale::uniform(40.0),
                             &font,
-                            lines[i],
+                            line,
                         );
                     }
 
