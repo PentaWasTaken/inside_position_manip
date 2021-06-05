@@ -8,11 +8,13 @@ use winapi::um::memoryapi::{ReadProcessMemory, WriteProcessMemory};
 use winapi::um::processthreadsapi::OpenProcess;
 use winapi::um::psapi::EnumProcessModules;
 use winapi::um::winnt::{HANDLE, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ, PROCESS_VM_WRITE};
-use winapi::um::winuser::{FindWindowA, GetForegroundWindow, SetForegroundWindow, GetWindowThreadProcessId};
+use winapi::um::winuser::{
+    FindWindowA, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow,
+};
 
 use winit::window::Window;
 
-use raw_window_handle::{RawWindowHandle, HasRawWindowHandle};
+use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 pub struct APIHandle {
     window_handle: HWND,
@@ -32,7 +34,11 @@ impl APIHandle {
             let pid = &mut 0u32;
             GetWindowThreadProcessId(window_handle, pid as *mut u32);
 
-            let handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION | PROCESS_VM_WRITE, 0, *pid);
+            let handle = OpenProcess(
+                PROCESS_VM_READ | PROCESS_QUERY_INFORMATION | PROCESS_VM_WRITE,
+                0,
+                *pid,
+            );
 
             if handle.is_null() {
                 return Err(());
@@ -84,7 +90,13 @@ impl APIHandle {
         let buffer = val.to_le_bytes();
 
         unsafe {
-            WriteProcessMemory(self.handle, address as *mut _, buffer.as_ptr() as *const _, buffer.len(), ptr::null_mut());
+            WriteProcessMemory(
+                self.handle,
+                address as *mut _,
+                buffer.as_ptr() as *const _,
+                buffer.len(),
+                ptr::null_mut(),
+            );
         }
     }
 
@@ -124,6 +136,6 @@ impl APIHandle {
     }
 
     pub fn is_game_focused(&self) -> bool {
-        self.window_handle == unsafe{GetForegroundWindow() as *mut _}
+        self.window_handle == unsafe { GetForegroundWindow() as *mut _ }
     }
 }
