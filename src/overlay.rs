@@ -7,6 +7,8 @@ use winit::{
 
 use pixels::{Pixels, SurfaceTexture};
 
+use image::imageops;
+use image::ImageFormat;
 use image::RgbaImage;
 use imageproc::drawing::draw_text_mut;
 
@@ -16,6 +18,8 @@ use crate::api::APIHandle;
 use crate::input_handler::InputHandler;
 
 const FONT_DATA: &[u8] = include_bytes!("./Calibri.ttf");
+
+const PADLOCK_IMG: &[u8] = include_bytes!("./padlock.png");
 
 pub struct Overlay {
     event_loop: EventLoop<()>,
@@ -66,6 +70,8 @@ impl Overlay {
         let font = self.font;
         let mut input_handler = self.input_handler;
 
+        let lock = image::load_from_memory_with_format(PADLOCK_IMG, ImageFormat::Png).unwrap();
+
         self.event_loop.run(move |event, _, control_flow| {
             match event {
                 //Exits the program when required
@@ -94,22 +100,27 @@ impl Overlay {
                     let win_size = window.inner_size();
                     let mut canvas = RgbaImage::new(win_size.width, win_size.height);
 
-                    if !api_handle.is_game_focused() {
-                        text.clear();
-                    }
+                    if api_handle.is_game_focused() {
+                        let lines: Vec<&str> = text.split('\n').collect();
+                        for (i, line) in lines.iter().enumerate() {
+                            let y_pos = i * 50;
+                            draw_text_mut(
+                                &mut canvas,
+                                [255, 255, 255, 255].into(),
+                                30,
+                                y_pos as u32,
+                                Scale::uniform(40.0),
+                                &font,
+                                line,
+                            );
+                        }
 
-                    let lines: Vec<&str> = text.split('\n').collect();
-                    for (i, line) in lines.iter().enumerate() {
-                        let y_pos = i * 50;
-                        draw_text_mut(
-                            &mut canvas,
-                            [255, 255, 255, 255].into(),
-                            0,
-                            y_pos as u32,
-                            Scale::uniform(40.0),
-                            &font,
-                            line,
-                        );
+                        for (i, parameter) in input_handler.parameters.iter().enumerate() {
+                            let y_pos = i * 50;
+                            if parameter.locked.is_some() {
+                                imageops::overlay(&mut canvas, &lock, 5, y_pos as u32 + 2);
+                            }
+                        }
                     }
 
                     //Copies the canvas to the window buffer
