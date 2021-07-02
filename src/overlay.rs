@@ -82,17 +82,23 @@ impl Overlay {
 
                 //Updates overlay state
                 Event::MainEventsCleared => {
-                    //Set overlay position
-                    let win_rect = api_handle.get_win_rect();
-                    let win_size = window.inner_size();
-
-                    let top = win_rect.bottom - win_size.height as i32;
-                    window.set_outer_position(PhysicalPosition::new(win_rect.left, top));
-
-                    //Update the focus
                     api_handle.update_focus(&window);
 
-                    input_handler.update(&mut text, &api_handle);
+                    //Set overlay position
+                    if api_handle.is_game_focused() {
+                        let win_rect = api_handle.get_win_rect();
+                        
+                        let win_size = window.inner_size();
+
+                        let top = win_rect.bottom - win_size.height as i32;
+                        window.set_outer_position(PhysicalPosition::new(win_rect.left, top));
+                    } else {
+                        window.set_outer_position(PhysicalPosition::new(-32000, -32000));
+                    }
+
+                    if api_handle.is_game_focused() {
+                        input_handler.update(&mut text, &api_handle);
+                    }
                 }
 
                 Event::RedrawRequested(_) => {
