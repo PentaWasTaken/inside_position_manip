@@ -1,6 +1,6 @@
 [package]
 name = "inside_position_manip"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Piet"]
 edition = "2018"
 
